@@ -6,8 +6,9 @@ python-dotenv
 Pillow
 pymongo
 speechrecognition
-sounddevice
+#sounddevice
 scipy
 numpy
 pandas
 python-multipart
+
