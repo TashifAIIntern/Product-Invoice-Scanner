@@ -12,10 +12,6 @@ import pandas as pd
 import time
 import pymongo
 from datetime import datetime
-import sounddevice as sd
-from scipy.io.wavfile import write
-import numpy as np
-import speech_recognition as sr
 
 # ==========================
 # CONFIGURATION & SETUP
@@ -23,7 +19,9 @@ import speech_recognition as sr
 load_dotenv()
 
 # MongoDB Configuration
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/Product_Invoice_DB")
+MONGODB_URI = os.getenv("MONGODB_URI")
+if not MONGODB_URI:
+    st.error("MONGODB_URI environment variable is not set.")
 DB_NAME = "Product_Invoice_DB"
 COLLECTION_NAME = "Product_Invoice"
 REMARKS_COLLECTION_NAME = "user_remarks"
@@ -32,13 +30,21 @@ REMARKS_COLLECTION_NAME = "user_remarks"
 # MONGODB SETUP
 # ==========================
 def get_mongo_client():
-    """Get MongoDB client connection."""
+    """Establish a MongoDB Atlas connection using SRV URI."""
+    uri = os.getenv("MONGODB_URI")
+
+    if not uri:
+        st.error("❌ MONGODB_URI not found in environment variables.")
+        return None
+
     try:
-        client = pymongo.MongoClient(MONGODB_URI)
-        client.admin.command('ping')
+        client = MongoClient(uri, serverSelectionTimeoutMS=10000)
+        client.admin.command("ping")
+        print("✅ Successfully connected to MongoDB Atlas!")
         return client
     except Exception as e:
-        st.error(f"Failed to connect to MongoDB: {str(e)}")
+        st.error(f"❌ MongoDB connection error: {e}")
+        print(f"❌ MongoDB connection error: {e}")
         return None
 
 def init_database():
@@ -85,6 +91,15 @@ def save_remarks_to_mongodb(remarks_data):
 # ==========================
 # SPEECH TO TEXT FUNCTIONALITY - WORKING VERSION
 # ==========================
+import os
+if os.getenv('RENDER') != 'True':
+    import sounddevice as sd
+    from scipy.io.wavfile import write
+    import numpy as np
+    import speech_recognition as sr
+else:
+    sd = None  # Placeholder to avoid undefined variable errors
+    
 def record_audio(duration=10):
     """Record audio and return the transcribed text."""
     try:
@@ -686,7 +701,8 @@ if st.session_state.show_remarks_section:
         # Use a form with a unique key for the record button
         record_form_key = "record_form_" + str(hash(st.session_state.user_remarks))
         with st.form(key=record_form_key):
-            record_submitted = st.form_submit_button("🎙️ Record Voice", use_container_width=True)
+            record_submitted = st.form_submit_button("🎙️ Record Voice", disabled=True)
+            st.warning("Voice recording is not supported on this hosted version. Use text input instead.")
             
             if record_submitted:
                 with st.spinner("🎤 Recording... Speak now!"):
@@ -805,4 +821,5 @@ with st.sidebar:
     • 💾 Separate remarks database
     • 📊 Product item tables
     • 🔍 Advanced GST calculations
+
     """)
