@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+streamlit
+google-generativeai
+python-dotenv
+Pillow
+pymongo
+speechrecognition
+sounddevice
+scipy
+numpy
+pandas
+python-multipart
